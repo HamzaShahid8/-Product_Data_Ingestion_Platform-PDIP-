@@ -20,7 +20,7 @@ class ImportErrorInline(admin.TabularInline):
 # IMPORT JOB ADMIN
 @admin.register(ImportJob)
 class ImportJobAdmin(admin.ModelAdmin):
-    list_display = ("id", "status", "total_rows", "success_rows", "failed_rows", "created_at")
+    list_display = ("id", "status", "total_rows", "success_rows", "failed_rows", "processed_rows", "processed_batches", "created_at")
     list_filter = ("status", "created_at")
     readonly_fields = ("status", "total_rows", "success_rows", "failed_rows", "created_at")
     search_fields = ("id",)

@@ -28,6 +28,8 @@ class ImportJob(models.Model):
     success_rows = models.PositiveIntegerField(default=0)
     failed_rows = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    processed_rows = models.IntegerField(default=0)
+    processed_batches = models.IntegerField(default=0)
     
 class ImportError(models.Model):
     job = models.ForeignKey(ImportJob, on_delete=models.CASCADE, related_name='errors')

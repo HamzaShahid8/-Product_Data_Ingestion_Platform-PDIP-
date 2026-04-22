@@ -18,7 +18,7 @@ class ImportUploadSerializer(serializers.Serializer):
 class ImportJobSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImportJob
-        fields = ["id", "status", "total_rows", "success_rows", "failed_rows", "created_at"]
+        fields = ["id", "status", "total_rows", "success_rows", "failed_rows", "created_at", 'processed_rows', 'processed_batches']
         
 class ImportErrorSerializer(serializers.ModelSerializer):
     class Meta:
