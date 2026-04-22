@@ -63,13 +63,19 @@ def process_import(self, job_id):
         
         # loop excel rows
         for row_number, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            
+            if not any(row):
+                continue
+            
             batch.append((row_number, row))
+            total += 1
 
             if len(batch) == BATCH_SIZE:
-                total, success, failed = process_batch(batch, headers, existing_products, job)
-                total += total
-                success += success
-                failed += failed
+                t, s, f = process_batch(batch, headers, existing_products, job)
+                success += s
+                failed += f
+                
+                batch_count += 1
 
                 # update progress
                 job.processed_rows = total
@@ -80,10 +86,10 @@ def process_import(self, job_id):
 
         # remaining rows
         if batch:
-            total, success, failed = process_batch(batch, headers, existing_products, job)
-            total += total
-            success += success
-            failed += failed
+            t, s, f = process_batch(batch, headers, existing_products, job)
+            total += t
+            success += s
+            failed += f
             
             batch_count += 1
 
@@ -117,8 +123,7 @@ def process_batch(batch, headers, existing_products, job):
     failed = 0
 
     for row_number, row in batch:
-        total += 1
-            
+        
         try:
             # convert row into dictionary
             data = dict(zip(headers, row))
