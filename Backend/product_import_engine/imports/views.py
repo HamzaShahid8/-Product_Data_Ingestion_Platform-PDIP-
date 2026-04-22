@@ -8,6 +8,7 @@ from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser, FormParser
+from .api_response import *
 
 
 # Create your views here.
@@ -41,13 +42,12 @@ class UploadImportView(APIView):
 
         # send to celery
         process_import.delay(job.id)
-
-        return Response(
-            {
-                "message": "File uploaded successfully",
-                "job_id": job.id
-            },
-            status=status.HTTP_201_CREATED
+        
+        return api_response(
+            success=True,
+            message='File Uploaded Successfully',
+            data = {'Job_id': job.id},
+            status_code=status.HTTP_201_CREATED
         )
 
 
@@ -63,7 +63,11 @@ class JobDetailView(APIView):
             )
 
         serializer = ImportJobSerializer(job)
-        return Response(serializer.data)
+        return api_response(
+            success=True,
+            message='Job Fetched Successfully',
+            data=serializer.data
+        )
 
 
 # 3. JOB ERRORS LIST
@@ -72,18 +76,21 @@ class JobErrorsView(APIView):
         try:
             job = ImportJob.objects.get(id=job_id)
         except ImportJob.DoesNotExist:
-            return Response(
-                {"error": "Job not found"},
-                status=status.HTTP_404_NOT_FOUND
+            return api_response(
+                success=False,
+                message='Job not found',
+                status_code=status.HTTP_404_NOT_FOUND
             )
 
         errors = ImportError.objects.filter(job=job)
 
         serializer = ImportErrorSerializer(errors, many=True)
 
-        return Response(
-            {
-                "job_id": job.id,
-                "errors": serializer.data
+        return api_response(
+            success=True,
+            message='Errors fetched succesfully',
+            data={
+                'Job_id': job.id,
+                'errors': serializer.data
             }
         )
