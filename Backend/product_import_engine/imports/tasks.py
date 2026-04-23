@@ -144,9 +144,7 @@ def process_batch(batch, headers, column_map, existing_products, job):
         try:
             data = dict(zip(headers, row))
 
-            # =========================
             # SAFE COLUMN ACCESS
-            # =========================
             sku = str(data.get(column_map["sku"]) or "").strip()
             title = str(data.get(column_map["title"]) or "").strip()
             price = float(data.get(column_map["price"]) or 0)
