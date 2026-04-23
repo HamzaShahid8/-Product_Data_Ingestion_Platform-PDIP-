@@ -91,6 +91,7 @@ class JobErrorsView(APIView):
             message='Errors fetched succesfully',
             data={
                 'Job_id': job.id,
+                'error_count': errors.count(),
                 'errors': serializer.data
             }
         )

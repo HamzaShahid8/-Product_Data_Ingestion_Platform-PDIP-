@@ -2,6 +2,7 @@ from celery import shared_task
 from openpyxl import load_workbook
 from django.db import transaction
 from .models import *
+from .ai_mapper import *
 
 @shared_task(bind=True)
 def process_import(self, job_id):
@@ -24,7 +25,23 @@ def process_import(self, job_id):
         
         # read headers from the 1st row of the excel file
         headers = [cell.value for cell in ws[1]]
-        print('Headers:', headers)
+        
+        # GEMINI API MAPPING
+        column_map = get_ai_column_mapping(headers)
+        
+        if not column_map:
+            column_map = {
+                "sku": "sku",
+                "title": "title",
+                "price": "price",
+                "stock": "stock",
+                "description": "description",
+                "image_url": "image_url",
+                "brand": "brand",
+            }
+
+        job.ai_column_mapping = column_map
+        job.save(update_fields=["ai_column_mapping"])
         
         # defining required header fields (static defined)
         # for now, all header fields are mandatory
@@ -71,7 +88,7 @@ def process_import(self, job_id):
             total += 1
 
             if len(batch) == BATCH_SIZE:
-                t, s, f = process_batch(batch, headers, existing_products, job)
+                t, s, f = process_batch(batch, headers, column_map, existing_products, job)
                 success += s
                 failed += f
                 
@@ -86,7 +103,7 @@ def process_import(self, job_id):
 
         # remaining rows
         if batch:
-            t, s, f = process_batch(batch, headers, existing_products, job)
+            t, s, f = process_batch(batch, headers, column_map, existing_products, job)
             total += t
             success += s
             failed += f
@@ -113,7 +130,7 @@ def process_import(self, job_id):
 
 # HELPER FUNCTION
 # 
-def process_batch(batch, headers, existing_products, job):
+def process_batch(batch, headers, column_map, existing_products, job):
     new_products = []
     update_products = []
     errors = []
@@ -125,45 +142,52 @@ def process_batch(batch, headers, existing_products, job):
     for row_number, row in batch:
         
         try:
-            # convert row into dictionary
             data = dict(zip(headers, row))
-                
-            sku = str(data['sku']).strip()
-            title = str(data['title']).strip()
-            price = float(data['price'])
-            stock = int(data['stock'])
-                
-            # decide create / update
+
+            # =========================
+            # SAFE COLUMN ACCESS
+            # =========================
+            sku = str(data.get(column_map["sku"]) or "").strip()
+            title = str(data.get(column_map["title"]) or "").strip()
+            price = float(data.get(column_map["price"]) or 0)
+            stock = int(data.get(column_map["stock"]) or 0)
+
+            if not sku:
+                raise ValueError("SKU missing")
+
             if sku in existing_products:
-                
-                product = Product.objects.get(sku=sku)
-        
+
+                product = existing_products[sku]
+
                 product.title = title
                 product.price = price
                 product.stock = stock
-                product.description = data.get('description')
-                product.image_url = data.get('image_url')
-                product.brand = data.get('brand')
-                    
+                product.description = data.get(column_map.get("description"))
+                product.image_url = data.get(column_map.get("image_url"))
+                product.brand = data.get(column_map.get("brand"))
+
                 update_products.append(product)
-                    
+
             else:
+
                 new_products.append(
                     Product(
                         sku=sku,
                         title=title,
                         price=price,
                         stock=stock,
-                        description=data.get('description'),
-                        image_url=data.get('image_url'),
-                        brand=data.get('brand'),
+                        description=data.get(column_map.get("description")),
+                        image_url=data.get(column_map.get("image_url")),
+                        brand=data.get(column_map.get("brand")),
                     )
                 )
+
             success += 1
-            
+
         except Exception as e:
+
             failed += 1
-                
+
             errors.append(
                 ImportError(
                     job=job,
