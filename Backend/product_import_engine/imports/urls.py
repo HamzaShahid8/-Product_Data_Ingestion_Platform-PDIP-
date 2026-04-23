@@ -12,10 +12,12 @@ urlpatterns = [
     # row-level errors
     path('<int:job_id>/errors/', JobErrorsView.as_view(), name='job-errors'),
     
-    # Dashboard
+    # dashboard
     path('dashboard/import-jobs/', ImportJobDashboardView.as_view(), name='import_jobs'),
     
+    # Dashboard with id
     path('dashboard/import-jobs/<int:job_id>/', ImportJobDetailView.as_view(), name='import_jobs_id'),
     
+    # dashboard errors with id
     path('dashboard/import-jobs/<int:job_id>/errors/', ImportJobErrorView.as_view(), name='import_jobs_errors'),
 ]
