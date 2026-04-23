@@ -95,3 +95,68 @@ class JobErrorsView(APIView):
                 'errors': serializer.data
             }
         )
+        
+class ImportJobDashboardView(APIView):
+    def get(self, request):
+        jobs = ImportJob.objects.all().order_by('-id')
+        
+        data = []
+        for job in jobs:
+            data.append({
+                'id': job.id,
+                'status': job.status,
+                'total_rows': job.total_rows,
+                'success_rows': job.success_rows,
+                'failed_rows': job.failed_rows,
+                'created_at': job.created_at,
+            })
+            
+            return api_response(
+                success=True,
+                message='Dashboard data fetched successfully',
+                data=data
+            )
+            
+class ImportJobDetailView(APIView):
+    def get(self, request, job_id):
+        
+        job = ImportJob.objects.filter(id=job_id).first()
+        
+        if not job:
+            return api_response(
+                success=False,
+                message='Job not found',
+                status_code=404
+            )
+        
+        return api_response(
+            success=True,
+            message='Job detail fetched',
+            data={
+                "id": job.id,
+                "status": job.status,
+                "total_rows": job.total_rows,
+                "success_rows": job.success_rows,
+                "failed_rows": job.failed_rows,
+                "processed_rows": job.processed_rows,
+                "processed_batches": job.processed_batches,
+                "ai_column_mapping": job.ai_column_mapping,
+                "created_at": job.created_at
+            }
+        )
+        
+class ImportJobErrorView(APIView):
+    def get(self, request, job_id):
+        errors = ImportError.objects.filter(id=job_id)
+        
+        return api_response(
+            success=True,
+            message='Error logs fetched',
+            data=[
+                {
+                    "row_number": e.row_number,
+                    "message": e.message,
+                }
+                for e in errors
+            ]
+        )
