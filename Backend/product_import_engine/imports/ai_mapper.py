@@ -5,16 +5,10 @@ from google import genai
 
 load_dotenv()
 
-
-# =========================
-# GEMINI CLIENT (NEW SDK)
-# =========================
+# GEMINI CLIENT
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-
-# =========================
 # AI COLUMN MAPPING
-# =========================
 def get_ai_column_mapping(headers):
 
     try:
@@ -53,10 +47,7 @@ Return ONLY valid JSON:
         print("Gemini Error:", str(e))
         return None
 
-
-# =========================
 # FALLBACK
-# =========================
 def default_column_mapping():
     return {
         "sku": "sku",
