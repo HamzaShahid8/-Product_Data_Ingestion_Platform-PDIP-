@@ -171,19 +171,16 @@ def process_batch(batch, headers, existing_products, job):
                     message=str(e),
                 )
             )
-        
-    # save everything in db (bulk)
-    with transaction.atomic():
             
-        if new_products:
-            Product.objects.bulk_create(new_products)
+    if new_products:
+        Product.objects.bulk_create(new_products)
                 
-        if update_products:
-            Product.objects.bulk_update(
-                update_products,
-                ['title', 'price', 'stock', 'description', 'image_url', 'brand']
-            )
-        if errors:
-            ImportError.objects.bulk_create(errors)
+    if update_products:
+        Product.objects.bulk_update(
+            update_products,
+            ['title', 'price', 'stock', 'description', 'image_url', 'brand']
+        )
+    if errors:
+        ImportError.objects.bulk_create(errors)
             
     return total, success, failed
